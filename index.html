@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0;">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta names="apple-mobile-web-app-status-bar-style" content="black" />
+	
+	<title>Animal Fun</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Brian Pfeil">
+	<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.0/themes/ui-lightness/jquery-ui.css" type="text/css" media="screen" title="no title" charset="utf-8">
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.0/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" charset="utf-8">
+	jQuery(function($) {
+		
+var a = {
+	
+	run: function() {
+		a.initGlobals();
+		a.layout();
+		a.registerEventHandlers();
+		a.bindScene(a.nextScene(), 'right');
+		a.overlay("window.innerWidth=" + window.innerWidth + "\nwindow.innerHeight=" + window.innerHeight);
+		//a.c.text("window.innerWidth=" + window.innerWidth + "window.innerHeight=" + window.innerHeight);
+
+		window.onresize = function() {
+			a.layout();
+			a.overlay("window.innerWidth=" + window.innerWidth + "\nwindow.innerHeight=" + window.innerHeight);			
+		}
+	},
+	
+	initGlobals: function() {
+		a.c = $('#content');
+		a.header = $('#header');
+		a.title = $('#title');
+		a.navBack = $('#nav-back');
+		a.navForward = $('#nav-forward');		
+		a.body = $('#body');
+		a.footer = $('#footer');
+		a.actions = $('#actions');
+		a.currentImage = null;
+		a.audio = null;
+	},
+	
+	sceneIndex: -1,
+	
+	scenes: [
+		{
+			'title': 'rss',
+			'image': 'RSS.png',
+			'audio': 'chirp.wav'
+		},
+		{
+			'title': 'facebook',
+			'image': 'twitter.png',
+			'audio': 'rabbit.wav'				
+		}
+	],
+	
+	headerLayout: {
+		'left': 0.2,
+		'center': 0.6,
+		'right': 0.2
+	},
+	
+	containerLayout: {
+		'header-width': 1.0,
+		'header-height': 0.1,
+
+		'body-width': 1.0,
+		'body-height': 0.8,
+	
+		'footer-width': 1.0,
+		'footer-height': 0.1
+	},
+	
+	layout: function() {
+
+		var w = window.innerWidth;
+		var h = window.innerHeight;
+		
+		a.c.css({
+			'width': w,
+			'height': h
+		});
+
+		$.each(['header', 'body', 'footer'], function(index, item) {
+			var $section = $('#' + item);
+			var sectionWidth = w * a.containerLayout[item + '-width'];
+			var sectionHeight = h * a.containerLayout[item + '-height'];
+			$section.css({
+				'width': sectionWidth + 'px',
+				'height': sectionHeight + 'px',
+			})
+		});
+		
+		$.each(['left', 'center', 'right'], function(index, item) {
+			var $e = a.header.find('.header-' + item);
+
+			$e.css({
+				'float': 'left',
+				'width': (a.headerLayout[item] * w) + 'px',
+				'height': a.header.height() + 'px',
+				'line-height': a.header.height() + 'px'
+			});
+		});
+
+		var actionCount = a.actions.children().size();
+
+		a.actions.children().each(function() {
+			var $e = $(this);
+			$e.css({
+				'width': (w/actionCount) + 'px',
+				'height': (h * a.containerLayout['footer-height']) + 'px',
+				'line-height': (h * a.containerLayout['footer-height']) + 'px'
+			});
+		});
+	},
+	
+	bindScene: function(s) {
+		
+		a.title.text(s.title);
+
+		a.body.children().remove();
+		var img = new Image();
+		img.src = s.image;
+		img.onload = function() {
+
+			// remove previous
+			if (a.currentImage != null) {
+				a.currentImage.remove();
+			}
+
+			var w = a.c.width();
+			var h = a.c.height();
+			var iw = this.width;
+			var ih = this.height;
+			var bw = a.body.width();
+			var bh = a.body.height();
+			var $img = $(img);
+			$img.css({
+				'position': 'relative',
+				'left': ((bw/2) - (iw/2)) + 'px',
+				'top': ((bh/2) - (ih/2)) + 'px'
+			});
+
+			a.body.append($img);	
+
+			setTimeout(function() {
+				//$img.removeClass('queued');
+				$img.one('webkitTransitionEnd', function() {
+					a.playAudio(s.audio);
+				})
+			}, 200);
+			a.currentImage = $img;
+		};
+	},
+	
+	playAudio: function(url) {
+		if (a.audio == null) {
+			a.audio = document.createElement('audio');
+		}
+		a.audio.src = url;
+		//a.audio.load();
+		a.audio.play();			
+	},
+	
+	nextScene: function() {
+		a.sceneIndex += 1;
+		if (a.sceneIndex > (a.scenes.length - 1)) {
+			a.sceneIndex = 0;
+		}
+		return a.scenes[a.sceneIndex];
+	},
+	
+	previousScene: function() {
+		a.sceneIndex -= 1;
+		if (a.sceneIndex < 0) {
+			a.sceneIndex = a.scenes.length - 1;
+		}
+		return a.scenes[a.sceneIndex];
+	},
+	
+	registerEventHandlers: function() {
+		a.title.click(function() {
+			a.c.css({
+				'width': ( (a.c.width() == 320) ? '480' : '320') + 'px',
+				'height': ( (a.c.height() == 460) ? '300' : '460') + 'px'
+			});
+			a.layout();
+			a.bindScene(a.scenes[0]);
+		});
+		
+		a.navForward.click(function() {
+			a.currentImage.addClass('transition-left');
+			a.currentImage.one('webkitTransitionEnd', function() {
+				a.bindScene( a.nextScene() );
+			});
+		});
+		
+		a.navBack.click(function() {
+			a.currentImage.addClass('transition-right');
+			a.currentImage.one('webkitTransitionEnd', function() {
+				a.bindScene( a.previousScene() );
+			});
+		});
+
+		$('#play-sound').click(function() {
+			a.playAudio('rabbit.wav');
+		});
+				
+	},
+
+	overlay: function(msg) {
+		var w = a.c.width();
+		var h = a.c.height();
+		
+		var ow = 200;
+		var oh = 200;
+		var $e = $("<div><div style='display: table-cell; padding: 20px; opacity: 1.0; color: white; margin: 20px'>" + msg + "</div></div>");
+		$e.addClass('overlay');
+		$e.css({
+			'position': 'absolute',
+			'left': ((w/2) - (ow/2)) + 'px',
+			'top': ((h/2) - (oh/2)) + 'px',
+			'width': ow + 'px',
+			'height': oh + 'px',
+			'z-index': '0'
+		});
+		$('body').append($e);
+	}
+
+};
+
+a.run();
+
+});	
+	</script>
+	<style type="text/css" media="screen">
+	* {
+		-webkit-touch-callout: none; /* prevent callout to copy image, etc when tap to hold */
+		-webkit-text-size-adjust: none; /* prevent webkit from resizing text to fit */
+		/* make transparent link selection, adjust last value opacity 0 to 1.0 */
+		-webkit-tap-highlight-color: rgba(0,0,0,1.0);
+		-webkit-user-select: none; /* prevent copy paste, to allow, change 'none' to 'text' */
+	}
+		
+	html, body {
+		margin: 0;
+		padding: 0;
+	}
+
+	#content {
+		background-color: #D8D8D8;
+	}
+	
+	#header {
+		background-color: white;
+	}
+	
+	.nav {
+		text-align: center;
+		background-color: white;
+	}
+	
+	.nav:hover {
+		opacity: 0.5;
+		background-color: grey;
+	}
+	
+	#title {
+		text-align: center;
+		background-color: white;
+	}
+
+	#body {
+		background-color: white;		
+	}
+
+	img {
+		-webkit-transition: all 0.5s ease-in-out;
+	}
+
+	img.transition-left {
+		-webkit-transform: translate(-320px, 0px) scale(1.0);
+		opacity: 0.0;
+	}
+
+	img.transition-right {
+		-webkit-transform: translate(320px, 0px) scale(1.0);
+		opacity: 0.0;
+	}
+
+	#footer {
+		background-color: white;
+	}
+	
+	#actions {
+
+	}
+	.action {
+		float:left;
+		background-color: grey;
+		text-align: center;
+		vertical-align: middle;
+		/*-webkit-border-radius: 10px;*/
+	}
+
+	.action:hover {
+		opacity: 0.5;
+	}
+	
+	.overlay {
+		background-color: black;
+		opacity: 0.5;
+		-webkit-border-radius: 10px;
+	}
+	</style>
+	
+</head>
+	<body>
+		<div id='content'>
+			<div id='header'>
+				<div id='nav-back' class='header-left nav'>&lt;</div>
+				<div id='title' class='header-center'></div>
+				<div id='nav-forward' class='header-right nav'>&gt;</div>
+			</div>
+			<div id='body'>
+			</div>
+			<div id='footer'>
+				<div id='actions'>
+					<div id='play-sound' class='action'>sound</div>
+					<div id='play-name' class='action'>name</div>
+					<div id='play-spell' class='action'>spell</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
